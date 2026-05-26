@@ -1,51 +1,60 @@
-import { useRequest } from 'ahooks';
-import { dashboardApi } from '../../api/dashboard';
-import StatCard from '../../components/common/StatCard';
+import { useRequest } from "ahooks";
+import { dashboardApi } from "../../api/dashboard";
+import StatCard from "../../components/common/StatCard";
 import {
-  RiUserLine, RiStore2Line, RiCalendarLine, RiTimeLine,
-  RiUserStarLine, RiAlertLine, RiLoader4Line,
-} from 'react-icons/ri';
-import dayjs from 'dayjs';
+  RiUserLine,
+  RiStore2Line,
+  RiCalendarLine,
+  RiTimeLine,
+  RiUserStarLine,
+  RiAlertLine,
+} from "react-icons/ri";
+import PageLoading from "../../components/common/PageLoading";
+import PageError from "../../components/common/PageError";
+import dayjs from "dayjs";
 
 function BookingStatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    pending: 'badge-warning',
-    confirmed: 'badge-success',
-    cancelled: 'badge-danger',
-    completed: 'badge-info',
-    no_show: 'badge-neutral',
+    pending: "badge-warning",
+    confirmed: "badge-success",
+    cancelled: "badge-danger",
+    completed: "badge-info",
+    no_show: "badge-neutral",
   };
-  return <span className={map[status] ?? 'badge-neutral'}>{status.replace('_', ' ')}</span>;
+  return (
+    <span className={map[status] ?? "badge-neutral"}>
+      {status.replace("_", " ")}
+    </span>
+  );
 }
 
 export default function AdminDashboard() {
-  const { data, loading } = useRequest(() => dashboardApi.adminStats().then(r => r.data.data), {
-    // Fallback mock data so UI renders even with no backend
-    onError: () => {},
-  });
+  const { data, loading, error, refresh } = useRequest(() =>
+    dashboardApi.adminStats().then((r) => r.data.data),
+  );
 
-  // Mock fallback
+  if (loading)
+    return (
+      <PageLoading title="Loading dashboard…" subtitle="Fetching your stats" />
+    );
+  if (error)
+    return (
+      <PageError message="Could not load dashboard stats." onRetry={refresh} />
+    );
+
   const stats = data ?? {
-    totalUsers: 1248,
-    totalOwners: 87,
-    totalCustomers: 1161,
-    totalRestaurants: 214,
-    activeRestaurants: 196,
-    totalBookings: 4820,
-    pendingBookings: 134,
-    confirmedBookings: 3981,
-    todayBookings: 48,
-    pendingRequests: 7,
+    totalUsers: 0,
+    totalOwners: 0,
+    totalCustomers: 0,
+    totalRestaurants: 0,
+    activeRestaurants: 0,
+    totalBookings: 0,
+    pendingBookings: 0,
+    confirmedBookings: 0,
+    todayBookings: 0,
+    pendingRequests: 0,
     recentBookings: [],
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <RiLoader4Line className="animate-spin text-primary-500" size={32} />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -90,16 +99,33 @@ export default function AdminDashboard() {
           </h3>
           <div className="space-y-3">
             {[
-              { label: 'Customers', value: stats.totalCustomers, color: 'bg-blue-500', pct: Math.round(stats.totalCustomers / stats.totalUsers * 100) },
-              { label: 'Owners', value: stats.totalOwners, color: 'bg-emerald-500', pct: Math.round(stats.totalOwners / stats.totalUsers * 100) },
-            ].map(r => (
+              {
+                label: "Customers",
+                value: stats.totalCustomers,
+                color: "bg-blue-500",
+                pct: Math.round(
+                  (stats.totalCustomers / stats.totalUsers) * 100,
+                ),
+              },
+              {
+                label: "Owners",
+                value: stats.totalOwners,
+                color: "bg-emerald-500",
+                pct: Math.round((stats.totalOwners / stats.totalUsers) * 100),
+              },
+            ].map((r) => (
               <div key={r.label}>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-slate-600">{r.label}</span>
-                  <span className="font-medium">{r.value.toLocaleString()}</span>
+                  <span className="font-medium">
+                    {r.value.toLocaleString()}
+                  </span>
                 </div>
                 <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className={`h-full ${r.color} rounded-full`} style={{ width: `${r.pct}%` }} />
+                  <div
+                    className={`h-full ${r.color} rounded-full`}
+                    style={{ width: `${r.pct}%` }}
+                  />
                 </div>
               </div>
             ))}
@@ -113,16 +139,35 @@ export default function AdminDashboard() {
           </h3>
           <div className="space-y-3">
             {[
-              { label: 'Confirmed', value: stats.confirmedBookings, color: 'bg-emerald-500', pct: Math.round(stats.confirmedBookings / stats.totalBookings * 100) },
-              { label: 'Pending', value: stats.pendingBookings, color: 'bg-amber-500', pct: Math.round(stats.pendingBookings / stats.totalBookings * 100) },
-            ].map(r => (
+              {
+                label: "Confirmed",
+                value: stats.confirmedBookings,
+                color: "bg-emerald-500",
+                pct: Math.round(
+                  (stats.confirmedBookings / stats.totalBookings) * 100,
+                ),
+              },
+              {
+                label: "Pending",
+                value: stats.pendingBookings,
+                color: "bg-amber-500",
+                pct: Math.round(
+                  (stats.pendingBookings / stats.totalBookings) * 100,
+                ),
+              },
+            ].map((r) => (
               <div key={r.label}>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-slate-600">{r.label}</span>
-                  <span className="font-medium">{r.value.toLocaleString()}</span>
+                  <span className="font-medium">
+                    {r.value.toLocaleString()}
+                  </span>
                 </div>
                 <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className={`h-full ${r.color} rounded-full`} style={{ width: `${r.pct}%` }} />
+                  <div
+                    className={`h-full ${r.color} rounded-full`}
+                    style={{ width: `${r.pct}%` }}
+                  />
                 </div>
               </div>
             ))}
@@ -136,12 +181,18 @@ export default function AdminDashboard() {
           </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50 border border-amber-100">
-              <span className="text-sm text-amber-700">Restaurant Requests</span>
-              <span className="font-bold text-amber-600 text-lg">{stats.pendingRequests}</span>
+              <span className="text-sm text-amber-700">
+                Restaurant Requests
+              </span>
+              <span className="font-bold text-amber-600 text-lg">
+                {stats.pendingRequests}
+              </span>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 border border-blue-100">
               <span className="text-sm text-blue-700">Pending Bookings</span>
-              <span className="font-bold text-blue-600 text-lg">{stats.pendingBookings}</span>
+              <span className="font-bold text-blue-600 text-lg">
+                {stats.pendingBookings}
+              </span>
             </div>
           </div>
         </div>
@@ -151,25 +202,41 @@ export default function AdminDashboard() {
       <div className="card">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <h3 className="font-semibold text-slate-800">Recent Bookings</h3>
-          <a href="/admin/bookings" className="text-sm text-primary-500 hover:text-primary-600 font-medium">View all →</a>
+          <a
+            href="/admin/bookings"
+            className="text-sm text-primary-500 hover:text-primary-600 font-medium">
+            View all →
+          </a>
         </div>
         {stats.recentBookings.length > 0 ? (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-50">
-                {['Customer', 'Restaurant', 'Date', 'Party', 'Status'].map(h => (
-                  <th key={h} className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase">{h}</th>
-                ))}
+                {["Customer", "Restaurant", "Date", "Party", "Status"].map(
+                  (h) => (
+                    <th
+                      key={h}
+                      className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase">
+                      {h}
+                    </th>
+                  ),
+                )}
               </tr>
             </thead>
             <tbody>
               {stats.recentBookings.map((b: any) => (
-                <tr key={b.id} className="border-b border-slate-50 hover:bg-slate-50/60">
+                <tr
+                  key={b.id}
+                  className="border-b border-slate-50 hover:bg-slate-50/60">
                   <td className="px-6 py-3">{b.customerName}</td>
                   <td className="px-6 py-3">{b.restaurantName}</td>
-                  <td className="px-6 py-3">{dayjs(b.date).format('MMM D, YYYY')} {b.time}</td>
+                  <td className="px-6 py-3">
+                    {dayjs(b.date).format("MMM D, YYYY")} {b.time}
+                  </td>
                   <td className="px-6 py-3">{b.partySize} guests</td>
-                  <td className="px-6 py-3"><BookingStatusBadge status={b.status} /></td>
+                  <td className="px-6 py-3">
+                    <BookingStatusBadge status={b.status} />
+                  </td>
                 </tr>
               ))}
             </tbody>

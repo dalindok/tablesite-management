@@ -67,10 +67,11 @@ export default function OwnerRestaurants() {
     { refreshDeps: [page, search] },
   );
 
-  const restaurants = data?.data ?? [];
-  const total       = data?.total ?? 0;
-  const totalPages  = data?.totalPages ?? 1;
-  const canAdd      = total < 3;
+  const restaurants      = data?.data ?? [];
+  const total            = data?.total ?? 0;
+  const totalPages       = data?.totalPages ?? 1;
+  const restaurantLimit  = data?.restaurantLimit ?? 3;
+  const canAdd           = data?.canAddRestaurant ?? (total < restaurantLimit);
 
   const {
     register, handleSubmit, reset, watch,
@@ -263,7 +264,7 @@ export default function OwnerRestaurants() {
         <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-3">
           <RiAlertLine className="text-amber-500 flex-shrink-0" size={18} />
           <div className="flex-1">
-            <p className="text-sm font-medium text-amber-800">Restaurant limit reached (3/3)</p>
+            <p className="text-sm font-medium text-amber-800">Restaurant limit reached ({total}/{restaurantLimit})</p>
             <p className="text-sm text-amber-600">
               Need more?{' '}
               <button onClick={() => navigate('/owner/requests')} className="underline font-medium">
@@ -281,7 +282,7 @@ export default function OwnerRestaurants() {
           placeholder="Search restaurants…"
         />
         <div className="flex items-center gap-2">
-          <span className="text-sm text-slate-500">{total}/3 used</span>
+          <span className="text-sm text-slate-500">{total}/{restaurantLimit} used</span>
           <button
             onClick={canAdd ? openCreate : () => navigate('/owner/requests')}
             className={canAdd ? 'btn-primary' : 'btn-secondary'}

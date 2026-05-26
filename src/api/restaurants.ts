@@ -40,10 +40,10 @@ export const restaurantsApi = {
       `/admin/restaurants/${id}`,
     ),
 
-  adminUpdateStatus: (id: number, status: Restaurant["status"]) =>
+  adminUpdateStatus: (id: number, status: Restaurant["status"], reason?: string) =>
     axiosInstance.patch<ApiResponse<Restaurant>>(
       `/admin/restaurants/${id}/status`,
-      { status },
+      { status, ...(reason ? { reason } : {}) },
     ),
 
   // ── Owner ──

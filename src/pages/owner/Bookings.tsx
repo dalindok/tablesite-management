@@ -6,7 +6,12 @@ import DataTable from '../../components/common/Table';
 import Pagination from '../../components/common/Pagination';
 import SearchBar from '../../components/common/SearchBar';
 import Modal from '../../components/common/Modal';
-import { RiFilterLine, RiEyeLine, RiCalendarLine } from 'react-icons/ri';
+import {
+  RiFilterLine, RiEyeLine, RiCalendarLine, RiAlertLine,
+  RiTimeLine, RiGroupLine, RiTableLine, RiStore2Line,
+  RiPhoneLine, RiMailLine, RiUserLine, RiHistoryLine,
+  RiMessage2Line, RiCloseCircleLine,
+} from 'react-icons/ri';
 import dayjs from 'dayjs';
 
 function StatusBadge({ status }: { status: BookingStatus }) {
@@ -24,6 +29,12 @@ export default function OwnerBookings() {
   const [viewTarget, setViewTarget] = useState<Booking | null>(null);
   const [updating, setUpdating] = useState<number | null>(null);
 
+  // ── Cancel confirmation state ──
+  const [cancelTarget, setCancelTarget] = useState<Booking | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelError, setCancelError] = useState('');
+  const [cancelling, setCancelling] = useState(false);
+
   const { data, loading, refresh } = useRequest(
     () => bookingsApi.ownerGetAll({ page, limit: 10, search, status: statusFilter }).then(r => r.data.data),
     { refreshDeps: [page, search, statusFilter] }
@@ -40,6 +51,33 @@ export default function OwnerBookings() {
       refresh();
     } finally {
       setUpdating(null);
+    }
+  };
+
+  const openCancelDialog = (b: Booking) => {
+    setCancelTarget(b);
+    setCancelReason('');
+    setCancelError('');
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelTarget) return;
+    if (!cancelReason.trim()) {
+      setCancelError('Please provide a reason for cancellation.');
+      return;
+    }
+    setCancelling(true);
+    try {
+      await bookingsApi.ownerUpdateStatus(cancelTarget.id, {
+        status: 'cancelled',
+        cancellationReason: cancelReason.trim(),
+      });
+      setCancelTarget(null);
+      refresh();
+    } catch (e: any) {
+      setCancelError(e?.response?.data?.message ?? 'Failed to cancel booking.');
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -81,7 +119,7 @@ export default function OwnerBookings() {
                 className="px-2 py-1 text-xs rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-medium">
                 Confirm
               </button>
-              <button onClick={() => handleStatusChange(b.id, 'cancelled')} disabled={updating === b.id}
+              <button onClick={() => openCancelDialog(b)} disabled={updating === b.id}
                 className="px-2 py-1 text-xs rounded-lg bg-red-50 text-red-500 hover:bg-red-100 font-medium">
                 Cancel
               </button>
@@ -96,6 +134,10 @@ export default function OwnerBookings() {
               <button onClick={() => handleStatusChange(b.id, 'no_show')} disabled={updating === b.id}
                 className="px-2 py-1 text-xs rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 font-medium">
                 No Show
+              </button>
+              <button onClick={() => openCancelDialog(b)} disabled={updating === b.id}
+                className="px-2 py-1 text-xs rounded-lg bg-red-50 text-red-500 hover:bg-red-100 font-medium">
+                Cancel
               </button>
             </>
           )}
@@ -132,35 +174,229 @@ export default function OwnerBookings() {
         )}
       </div>
 
-      <Modal isOpen={!!viewTarget} onClose={() => setViewTarget(null)} title="Booking Details" size="md">
+      {/* ── View Booking Detail ── */}
+      <Modal isOpen={!!viewTarget} onClose={() => setViewTarget(null)} title="Booking Details" size="lg">
         {viewTarget && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { label: 'Customer', value: viewTarget.customerName },
-                { label: 'Phone', value: viewTarget.customerPhone || '—' },
-                { label: 'Email', value: viewTarget.customerEmail || '—' },
-                { label: 'Restaurant', value: viewTarget.restaurantName },
-                { label: 'Date', value: dayjs(viewTarget.date).format('MMMM D, YYYY') },
-                { label: 'Time', value: viewTarget.time },
-                { label: 'Party Size', value: `${viewTarget.partySize} guests` },
-                { label: 'Table', value: viewTarget.tableNumber ? `#${viewTarget.tableNumber}` : 'Not assigned' },
-              ].map(f => (
-                <div key={f.label}>
-                  <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">{f.label}</p>
-                  <p className="text-sm text-slate-800 mt-1">{f.value}</p>
+          <div className="space-y-3">
+
+            {/* ── Status banner ── */}
+            {(() => {
+              const cfg: Record<BookingStatus, { bg: string; text: string; border: string; dot: string }> = {
+                pending:   { bg: 'bg-amber-50',   text: 'text-amber-800',   border: 'border-amber-200',  dot: 'bg-amber-400' },
+                confirmed: { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200',dot: 'bg-emerald-500' },
+                cancelled: { bg: 'bg-red-50',     text: 'text-red-800',     border: 'border-red-200',    dot: 'bg-red-500' },
+                completed: { bg: 'bg-blue-50',    text: 'text-blue-800',    border: 'border-blue-200',   dot: 'bg-blue-500' },
+                no_show:   { bg: 'bg-slate-100',  text: 'text-slate-600',   border: 'border-slate-200',  dot: 'bg-slate-400' },
+              };
+              const c = cfg[viewTarget.status] ?? cfg.pending;
+              return (
+                <div className={`flex items-center justify-between px-4 py-3 rounded-xl border ${c.bg} ${c.border}`}>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${c.dot}`} />
+                    <span className={`text-sm font-semibold capitalize ${c.text}`}>
+                      {viewTarget.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <span className="text-xs text-slate-400">
+                    #{viewTarget.id}
+                  </span>
                 </div>
-              ))}
-              <div className="col-span-2">
-                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Status</p>
-                <div className="mt-1"><StatusBadge status={viewTarget.status} /></div>
+              );
+            })()}
+
+            {/* ── Booking info ── */}
+            <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+              {/* Header row */}
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-100">
+                <RiCalendarLine className="text-slate-400" size={14} />
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Booking Info</span>
               </div>
-              {viewTarget.specialRequests && (
-                <div className="col-span-2">
-                  <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Special Requests</p>
-                  <p className="text-sm text-slate-700 mt-1 p-3 bg-slate-50 rounded-lg">{viewTarget.specialRequests}</p>
+              <div className="p-4 grid grid-cols-2 gap-x-6 gap-y-4">
+
+                {/* Date — highlighted */}
+                <div className="col-span-2 flex items-center gap-3 p-3 rounded-xl bg-primary-50 border border-primary-100">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary-100 flex flex-col items-center justify-center">
+                    <span className="text-xs font-bold text-primary-700 leading-none">
+                      {dayjs(viewTarget.date).format('MMM').toUpperCase()}
+                    </span>
+                    <span className="text-lg font-bold text-primary-700 leading-none">
+                      {dayjs(viewTarget.date).format('D')}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-base font-semibold text-primary-800">
+                      {dayjs(viewTarget.date).format('dddd, MMMM D, YYYY')}
+                    </p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <RiTimeLine className="text-primary-500" size={13} />
+                      <span className="text-sm text-primary-600 font-medium">{viewTarget.time}</span>
+                    </div>
+                  </div>
                 </div>
-              )}
+
+                {/* Party size */}
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                    <RiGroupLine className="text-emerald-600" size={16} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-emerald-600 font-medium">Party Size</p>
+                    <p className="text-base font-bold text-emerald-800">{viewTarget.partySize} guests</p>
+                  </div>
+                </div>
+
+                {/* Table */}
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <div className="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center flex-shrink-0">
+                    <RiTableLine className="text-slate-500" size={16} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium">Table</p>
+                    <p className="text-base font-bold text-slate-700">
+                      {viewTarget.tableNumber ? `#${viewTarget.tableNumber}` : 'Not assigned'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Restaurant */}
+                <div className="flex items-center gap-2">
+                  <RiStore2Line className="text-slate-400 flex-shrink-0" size={15} />
+                  <div>
+                    <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Restaurant</p>
+                    <p className="text-sm font-medium text-slate-800 mt-0.5">{viewTarget.restaurantName || '—'}</p>
+                  </div>
+                </div>
+
+                {/* Booked on */}
+                <div className="flex items-center gap-2">
+                  <RiHistoryLine className="text-slate-400 flex-shrink-0" size={15} />
+                  <div>
+                    <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Booked On</p>
+                    <p className="text-sm font-medium text-slate-800 mt-0.5">
+                      {viewTarget.createdAt ? dayjs(viewTarget.createdAt).format('MMM D, YYYY · HH:mm') : '—'}
+                    </p>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* ── Contact details ── */}
+            <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-100">
+                <RiUserLine className="text-slate-400" size={14} />
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Contact Details</span>
+              </div>
+              <div className="p-4">
+                {/* Avatar + name */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-bold text-primary-700">
+                      {(viewTarget.contactCustomerName || viewTarget.customerName || '?')
+                        .split(' ').slice(0, 2).map((n: string) => n[0]).join('').toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="text-base font-semibold text-slate-800">
+                    {viewTarget.contactCustomerName || viewTarget.customerName || '—'}
+                  </p>
+                </div>
+                <div className="space-y-2 pl-1">
+                  <div className="flex items-center gap-2.5">
+                    <RiPhoneLine className="text-emerald-500 flex-shrink-0" size={15} />
+                    <span className="text-sm text-slate-700">
+                      {viewTarget.contactCustomerPhone || viewTarget.customerPhone || '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <RiMailLine className="text-blue-500 flex-shrink-0" size={15} />
+                    <span className="text-sm text-slate-700 break-all">
+                      {viewTarget.contactCustomerEmail || viewTarget.customerEmail || '—'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Account (booked by) ── */}
+            {viewTarget.bookingUserName && (
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200 bg-white">
+                <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+                  <RiUserLine className="text-slate-400" size={14} />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Booked By (Account)</p>
+                  <p className="text-sm font-medium text-slate-700 mt-0.5">{viewTarget.bookingUserName}</p>
+                </div>
+              </div>
+            )}
+
+            {/* ── Special requests ── */}
+            {viewTarget.specialRequests && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-amber-100">
+                  <RiMessage2Line className="text-amber-500" size={14} />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-amber-600">Special Requests</span>
+                </div>
+                <p className="px-4 py-3 text-sm text-amber-900 leading-relaxed">{viewTarget.specialRequests}</p>
+              </div>
+            )}
+
+            {/* ── Cancellation reason ── */}
+            {viewTarget.cancellationReason && (
+              <div className="rounded-xl border border-red-200 bg-red-50 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-red-100">
+                  <RiCloseCircleLine className="text-red-500" size={14} />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-red-600">Cancellation Reason</span>
+                </div>
+                <p className="px-4 py-3 text-sm text-red-900 leading-relaxed">{viewTarget.cancellationReason}</p>
+              </div>
+            )}
+
+          </div>
+        )}
+      </Modal>
+
+      {/* ── Cancel Confirmation Modal ── */}
+      <Modal
+        isOpen={!!cancelTarget}
+        onClose={() => { if (!cancelling) setCancelTarget(null); }}
+        title="Cancel Booking"
+        size="sm"
+        footer={
+          <>
+            <button className="btn-secondary" onClick={() => setCancelTarget(null)} disabled={cancelling}>
+              Keep Booking
+            </button>
+            <button className="btn-danger" onClick={handleConfirmCancel} disabled={cancelling}>
+              {cancelling ? 'Cancelling…' : 'Confirm Cancel'}
+            </button>
+          </>
+        }
+      >
+        {cancelTarget && (
+          <div className="space-y-4">
+            {/* Warning banner */}
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-red-50 border border-red-200">
+              <RiAlertLine className="text-red-500 flex-shrink-0 mt-0.5" size={18} />
+              <div>
+                <p className="text-sm font-medium text-red-800">Cancel this booking?</p>
+                <p className="text-sm text-red-600 mt-0.5">
+                  {cancelTarget.customerName} · {dayjs(cancelTarget.date).format('MMM D')} at {cancelTarget.time} · {cancelTarget.partySize} guests
+                </p>
+              </div>
+            </div>
+
+            {/* Reason input */}
+            <div>
+              <label className="label">Reason for cancellation <span className="text-red-400">*</span></label>
+              <textarea
+                className={`input-field resize-none ${cancelError ? 'input-error' : ''}`}
+                rows={3}
+                placeholder="e.g. Restaurant unavailable on this date, overbooking, etc."
+                value={cancelReason}
+                onChange={e => { setCancelReason(e.target.value); if (cancelError) setCancelError(''); }}
+              />
+              {cancelError && <p className="mt-1 text-xs text-red-500">{cancelError}</p>}
             </div>
           </div>
         )}

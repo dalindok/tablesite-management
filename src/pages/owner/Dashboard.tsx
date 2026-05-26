@@ -5,9 +5,10 @@ import {
   RiStore2Line,
   RiCalendarLine,
   RiTimeLine,
-  RiLoader4Line,
   RiAlertLine,
 } from "react-icons/ri";
+import PageLoading from "../../components/common/PageLoading";
+import PageError from "../../components/common/PageError";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 
@@ -28,31 +29,23 @@ function BookingStatusBadge({ status }: { status: string }) {
 
 export default function OwnerDashboard() {
   const navigate = useNavigate();
-  const { data, loading } = useRequest(
+  const { data, loading, error, refresh } = useRequest(
     () => dashboardApi.ownerStats().then((r) => r.data.data),
-    {
-      onError: () => {},
-    },
   );
 
+  if (loading) return <PageLoading title="Loading dashboard…" subtitle="Fetching your stats" />;
+  if (error) return <PageError message="Could not load dashboard stats." onRetry={refresh} />;
+
   const stats = data ?? {
-    totalRestaurants: 2,
-    activeRestaurants: 2,
-    totalBookings: 347,
-    pendingBookings: 12,
-    confirmedBookings: 289,
-    todayBookings: 8,
+    totalRestaurants: 0,
+    activeRestaurants: 0,
+    totalBookings: 0,
+    pendingBookings: 0,
+    confirmedBookings: 0,
+    todayBookings: 0,
     canAddRestaurant: true,
     recentBookings: [],
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <RiLoader4Line className="animate-spin text-primary-500" size={32} />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -65,10 +58,10 @@ export default function OwnerDashboard() {
           />
           <div>
             <p className="text-sm font-medium text-amber-800">
-              Restaurant limit reached (3/3)
+              Restaurant limit reached ({stats.totalRestaurants}/{stats.restaurantLimit ?? 3})
             </p>
             <p className="text-sm text-amber-600 mt-0.5">
-              You've reached the maximum of 3 restaurants.{" "}
+              You've reached the maximum of {stats.restaurantLimit ?? 3} restaurants.{" "}
               <button
                 onClick={() => navigate("/owner/requests")}
                 className="underline font-medium">

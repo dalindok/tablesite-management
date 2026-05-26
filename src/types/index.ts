@@ -69,17 +69,35 @@ export interface Restaurant {
   description?: string;
   address: string;
   city: string;
+  state?: string;
+  country?: string;
+  postalCode?: string;
   phone: string;
   email: string;
+  website?: string;
+  coverImageUrl?: string;
   cuisineType: CuisineType;
+  priceRange?: PriceRange;
+  isPopular?: boolean;
   capacity: number;
+  minCapacity?: number;
   openingTime: string;
   closingTime: string;
   image?: string;
   status: RestaurantStatus;
   ownerId: number;
   ownerName?: string;
+  ownerEmail?: string;
+  ownerPhone?: string;
   rating?: number;
+  adminNote?: string;
+  minBookingNotice?: number;
+  maxBookingDays?: number;
+  cancellationHours?: number;
+  depositRequired?: boolean;
+  depositAmount?: number;
+  parkingAvailable?: boolean;
+  dressCode?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -114,25 +132,34 @@ export interface Booking {
   restaurantId: number;
   restaurantName?: string;
   customerId: number;
+  // Legacy / fallback fields
   customerName?: string;
   customerEmail?: string;
   customerPhone?: string;
+  // Contact details submitted in the booking form
+  contactCustomerName?: string;
+  contactCustomerPhone?: string;
+  contactCustomerEmail?: string;
+  // Linked user account name
+  bookingUserName?: string;
   date: string;
   time: string;
   partySize: number;
   status: BookingStatus;
   specialRequests?: string;
-  tableNumber?: number;
+  tableNumber?: string;
+  cancellationReason?: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface UpdateBookingPayload {
   status?: BookingStatus;
-  tableNumber?: number;
+  tableNumber?: string;
   date?: string;
   time?: string;
   partySize?: number;
+  cancellationReason?: string;
 }
 
 // ── Restaurant Requests ───────────────────────────────
@@ -188,6 +215,7 @@ export interface OwnerDashboardStats {
   confirmedBookings: number;
   todayBookings: number;
   canAddRestaurant: boolean;
+  restaurantLimit?: number;
   recentBookings: Booking[];
 }
 
@@ -303,7 +331,7 @@ export interface RestaurantFull {
   cancellationHours: number;
   depositRequired: boolean;
   depositAmount: number;
-  capacity: number;      // formatRestaurant returns r.max_capacity as "capacity"
+  capacity: number; // formatRestaurant returns r.max_capacity as "capacity"
   minCapacity: number;
   parkingAvailable: boolean;
   dressCode?: string;
@@ -338,7 +366,7 @@ export interface CreateRestaurantExtendedPayload {
   longitude?: string;
   priceRange?: PriceRange;
   isPopular?: boolean;
-  capacity: number;    // backend schema field name is "capacity" → maps to max_capacity in DB
+  capacity: number; // backend schema field name is "capacity" → maps to max_capacity in DB
   minCapacity?: number;
   minBookingNotice?: number;
   maxBookingDays?: number;
@@ -401,7 +429,7 @@ export interface CreateMenuPayload {
 }
 
 export interface UpdateMenuPayload extends Partial<CreateMenuPayload> {
-  id: number;           // required by updateMenuSchema
+  id: number; // required by updateMenuSchema
   restaurant_id: number; // required by updateMenuSchema
 }
 
@@ -419,7 +447,7 @@ export interface CreateMenuItemPayload {
 }
 
 export interface UpdateMenuItemPayload extends Partial<CreateMenuItemPayload> {
-  id: number;      // required by updateMenuItemSchema
+  id: number; // required by updateMenuItemSchema
   menu_id: number; // required by updateMenuItemSchema
 }
 
@@ -430,6 +458,9 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   totalPages: number;
+  // Owner-specific: approved restaurant limit & add eligibility
+  restaurantLimit?: number;
+  canAddRestaurant?: boolean;
 }
 
 export interface PaginationParams {

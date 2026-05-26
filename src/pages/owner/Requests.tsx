@@ -6,7 +6,10 @@ import type { RestaurantRequest } from '../../types';
 import DataTable from '../../components/common/Table';
 import Modal from '../../components/common/Modal';
 import Pagination from '../../components/common/Pagination';
-import { RiAddLine, RiEyeLine, RiAlertLine, RiCheckboxCircleLine, RiCloseCircleLine, RiTimeLine } from 'react-icons/ri';
+import {
+  RiAddLine, RiEyeLine, RiAlertLine, RiCheckboxCircleLine, RiCloseCircleLine, RiTimeLine,
+  RiArrowRightLine, RiCalendarLine, RiMessage2Line, RiShieldUserLine,
+} from 'react-icons/ri';
 import dayjs from 'dayjs';
 
 function StatusBadge({ status }: { status: RestaurantRequest['status'] }) {
@@ -104,8 +107,7 @@ export default function OwnerRequests() {
           <div>
             <h3 className="font-semibold text-slate-800">Need more restaurants?</h3>
             <p className="text-sm text-slate-500 mt-1 leading-relaxed">
-              Each owner can manage up to 3 restaurants by default. To add more, submit a request to the admin team.
-              You'll receive a response with an approval or rejection and a reason.
+              Each owner can manage up to 3 restaurants by default. If you need more, submit a request — the admin will approve or reject with a reason.
             </p>
           </div>
           <div className="flex-shrink-0">
@@ -181,45 +183,104 @@ export default function OwnerRequests() {
       {/* View detail modal */}
       <Modal isOpen={!!viewTarget} onClose={() => setViewTarget(null)} title="Request Details" size="md">
         {viewTarget && (
-          <div className="space-y-4">
-            <div className={`p-4 rounded-xl border ${
-              viewTarget.status === 'approved' ? 'bg-emerald-50 border-emerald-200' :
-              viewTarget.status === 'rejected' ? 'bg-red-50 border-red-200' :
-              'bg-amber-50 border-amber-200'
-            }`}>
-              <div className="flex items-center gap-2">
-                <StatusBadge status={viewTarget.status} />
-                <span className="text-sm text-slate-600">
-                  {viewTarget.status === 'pending' && 'Awaiting admin review'}
-                  {viewTarget.status === 'approved' && `Approved on ${dayjs(viewTarget.reviewedAt).format('MMM D, YYYY')}`}
-                  {viewTarget.status === 'rejected' && `Rejected on ${dayjs(viewTarget.reviewedAt).format('MMM D, YYYY')}`}
-                </span>
+          <div className="space-y-3">
+
+            {/* Status banner */}
+            {(() => {
+              const cfg = {
+                pending:  { bg: 'bg-amber-50',   border: 'border-amber-200',   dot: 'bg-amber-400',   text: 'text-amber-800',   sub: 'Awaiting admin review' },
+                approved: { bg: 'bg-emerald-50', border: 'border-emerald-200', dot: 'bg-emerald-500', text: 'text-emerald-800', sub: viewTarget.reviewedAt ? `Approved on ${dayjs(viewTarget.reviewedAt).format('MMM D, YYYY')}` : 'Approved' },
+                rejected: { bg: 'bg-red-50',     border: 'border-red-200',     dot: 'bg-red-500',     text: 'text-red-800',     sub: viewTarget.reviewedAt ? `Rejected on ${dayjs(viewTarget.reviewedAt).format('MMM D, YYYY')}` : 'Rejected' },
+              };
+              const c = cfg[viewTarget.status] ?? cfg.pending;
+              return (
+                <div className={`flex items-center justify-between px-4 py-3 rounded-xl border ${c.bg} ${c.border}`}>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${c.dot}`} />
+                    <span className={`text-sm font-semibold capitalize ${c.text}`}>{viewTarget.status}</span>
+                  </div>
+                  <span className={`text-xs ${c.text} opacity-70`}>{c.sub}</span>
+                </div>
+              );
+            })()}
+
+            {/* Request counter */}
+            <div className="flex items-center justify-center gap-4 py-3 px-4 rounded-xl bg-slate-50 border border-slate-200">
+              <div className="text-center">
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Current</p>
+                <p className="text-2xl font-bold text-slate-700">{viewTarget.currentCount}</p>
+                <p className="text-xs text-slate-400">restaurants</p>
+              </div>
+              <RiArrowRightLine className="text-primary-400" size={22} />
+              <div className="text-center">
+                <p className="text-xs text-primary-500 font-medium uppercase tracking-wider mb-1">Requested</p>
+                <p className="text-2xl font-bold text-primary-600">{viewTarget.requestedCount}</p>
+                <p className="text-xs text-primary-400">restaurants</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Current Count</p>
-                <p className="text-sm text-slate-800 mt-1">{viewTarget.currentCount} restaurants</p>
+
+            {/* Dates */}
+            <div className={`grid gap-3 ${viewTarget.reviewedBy ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <RiCalendarLine className="text-slate-400 flex-shrink-0" size={15} />
+                <div>
+                  <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Submitted</p>
+                  <p className="text-sm font-medium text-slate-700 mt-0.5">{dayjs(viewTarget.createdAt).format('MMM D, YYYY')}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Requested Limit</p>
-                <p className="text-sm text-slate-800 mt-1">{viewTarget.requestedCount} restaurants</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Submitted</p>
-                <p className="text-sm text-slate-800 mt-1">{dayjs(viewTarget.createdAt).format('MMMM D, YYYY')}</p>
-              </div>
+              {viewTarget.reviewedBy && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <RiShieldUserLine className="text-slate-400 flex-shrink-0" size={15} />
+                  <div>
+                    <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Reviewed By</p>
+                    <p className="text-sm font-medium text-slate-700 mt-0.5">{viewTarget.reviewedBy}</p>
+                  </div>
+                </div>
+              )}
             </div>
-            <div>
-              <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Your Reason</p>
-              <p className="text-sm text-slate-700 mt-1 p-3 bg-slate-50 rounded-lg leading-relaxed">{viewTarget.reason}</p>
+
+            {/* Owner reason */}
+            <div className="rounded-xl border border-amber-200 bg-amber-50 overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-amber-100">
+                <RiMessage2Line className="text-amber-500" size={14} />
+                <span className="text-xs font-semibold uppercase tracking-wider text-amber-600">Your Reason</span>
+              </div>
+              <p className="px-4 py-3 text-sm text-amber-900 leading-relaxed max-h-32 overflow-y-auto">{viewTarget.reason}</p>
             </div>
+
+            {/* Admin note */}
             {viewTarget.adminNote && (
-              <div>
-                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Admin Response</p>
-                <p className="text-sm text-slate-700 mt-1 p-3 bg-blue-50 rounded-lg leading-relaxed border border-blue-100">{viewTarget.adminNote}</p>
+              <div className={`rounded-xl overflow-hidden border ${
+                viewTarget.status === 'approved'
+                  ? 'border-emerald-200 bg-emerald-50'
+                  : viewTarget.status === 'rejected'
+                  ? 'border-red-200 bg-red-50'
+                  : 'border-blue-200 bg-blue-50'
+              }`}>
+                <div className={`flex items-center gap-2 px-4 py-2.5 border-b ${
+                  viewTarget.status === 'approved' ? 'border-emerald-100'
+                  : viewTarget.status === 'rejected' ? 'border-red-100'
+                  : 'border-blue-100'
+                }`}>
+                  {viewTarget.status === 'approved'
+                    ? <RiCheckboxCircleLine className="text-emerald-500" size={14} />
+                    : viewTarget.status === 'rejected'
+                    ? <RiCloseCircleLine className="text-red-500" size={14} />
+                    : <RiAlertLine className="text-blue-500" size={14} />}
+                  <span className={`text-xs font-semibold uppercase tracking-wider ${
+                    viewTarget.status === 'approved' ? 'text-emerald-600'
+                    : viewTarget.status === 'rejected' ? 'text-red-600'
+                    : 'text-blue-600'
+                  }`}>Admin Response</span>
+                </div>
+                <p className={`px-4 py-3 text-sm leading-relaxed ${
+                  viewTarget.status === 'approved' ? 'text-emerald-900'
+                  : viewTarget.status === 'rejected' ? 'text-red-900'
+                  : 'text-blue-900'
+                }`}>{viewTarget.adminNote}</p>
               </div>
             )}
+
           </div>
         )}
       </Modal>
