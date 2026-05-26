@@ -46,7 +46,7 @@ export default function Sidebar() {
       {/* Overlay */}
       {collapsed && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
           onClick={() => setCollapsed(false)}
         />
       )}
@@ -60,7 +60,7 @@ export default function Sidebar() {
       `}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-white/10">
-          <div className="w-9 h-9 rounded-xl bg-primary-500 flex items-center justify-center flex-shrink-0">
+          <div className="flex items-center justify-center flex-shrink-0 w-9 h-9 rounded-xl bg-primary-500">
             <RiRestaurantLine size={20} />
           </div>
           <div>
@@ -96,16 +96,16 @@ export default function Sidebar() {
         </nav>
 
         {/* User + Logout */}
-        <div className="border-t border-white/10 p-4">
+        <div className="p-4 border-t border-white/10">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 rounded-full bg-primary-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+            <div className="flex items-center justify-center flex-shrink-0 text-sm font-bold text-white rounded-full w-9 h-9 bg-primary-500">
               {user?.name?.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
               <p className="text-sm font-medium text-white truncate">
                 {user?.name}
               </p>
-              <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+              <p className="text-xs truncate text-slate-400">{user?.email}</p>
             </div>
           </div>
           <button
@@ -124,9 +124,9 @@ export default function Sidebar() {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowConfirm(false)}
           />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center text-center gap-4">
+          <div className="relative flex flex-col items-center w-full max-w-sm gap-4 p-6 text-center bg-white shadow-2xl rounded-2xl">
             {/* Icon */}
-            <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
+            <div className="flex items-center justify-center rounded-full w-14 h-14 bg-red-50">
               <RiLogoutBoxLine size={26} className="text-red-500" />
             </div>
 
@@ -141,7 +141,7 @@ export default function Sidebar() {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3 w-full mt-1">
+            <div className="flex w-full gap-3 mt-1">
               <button
                 onClick={() => setShowConfirm(false)}
                 className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
