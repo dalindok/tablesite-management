@@ -683,28 +683,30 @@ function TagsClosuresTab({ restaurantId }: { restaurantId: number }) {
 
       {/* Special Closures */}
       <SectionCard title="Special Closures">
-        <div className="flex gap-2 mb-4">
+        <div className="flex flex-col gap-2 mb-4">
           <input
-            type="date"
             className="input-field text-sm"
-            value={cForm.date}
-            onChange={(e) => setCForm((f) => ({ ...f, date: e.target.value }))}
-          />
-          <input
-            className="input-field flex-1 text-sm"
             placeholder="Reason (e.g. Khmer New Year)"
             value={cForm.reason ?? ""}
             onChange={(e) =>
               setCForm((f) => ({ ...f, reason: e.target.value }))
             }
           />
-          <button
-            className="btn-primary text-sm"
-            onClick={addClosure}
-            disabled={cSaving || !cForm.date}>
-            {cSaving ? <Spinner /> : <RiAddLine size={15} />}
-            Add
-          </button>
+          <div className="flex gap-2">
+            <input
+              type="date"
+              className="input-field text-sm flex-1"
+              value={cForm.date}
+              onChange={(e) => setCForm((f) => ({ ...f, date: e.target.value }))}
+            />
+            <button
+              className="btn-primary text-sm"
+              onClick={addClosure}
+              disabled={cSaving || !cForm.date}>
+              {cSaving ? <Spinner /> : <RiAddLine size={15} />}
+              Add
+            </button>
+          </div>
         </div>
         {closures.length === 0 ? (
           <p className="text-center text-slate-400 text-sm py-4">

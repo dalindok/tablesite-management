@@ -81,7 +81,7 @@ export default function OwnerRestaurants() {
       isPopular: false,
       depositRequired: false,
       parkingAvailable: false,
-      maxCapacity: 50,
+      capacity: 50,
       minCapacity: 2,
       minBookingNotice: 60,
       maxBookingDays: 30,
@@ -97,26 +97,61 @@ export default function OwnerRestaurants() {
     setEditTarget(null);
     reset({
       priceRange: 'MEDIUM', isPopular: false, depositRequired: false,
-      parkingAvailable: false, maxCapacity: 50, minCapacity: 2,
+      parkingAvailable: false, capacity: 50, minCapacity: 2,
       minBookingNotice: 60, maxBookingDays: 30, cancellationHours: 24, depositAmount: 0,
     });
     setFormOpen(true);
   };
 
-  const openEdit = (r: Restaurant) => {
+  const openEdit = async (r: Restaurant) => {
     setFormMode('edit');
     setEditTarget(r);
+    setFormOpen(true);
+    // Pre-fill with list data immediately so the modal opens fast,
+    // then overwrite with the full detail once fetched.
     reset({
       name: r.name,
-      description: r.description,
+      description: r.description ?? '',
       cuisineType: r.cuisineType,
       address: r.address,
       city: r.city,
       phone: r.phone,
       email: r.email,
-      maxCapacity: (r as any).maxCapacity ?? (r as any).capacity,
+      capacity: (r as any).capacity,
     });
-    setFormOpen(true);
+    try {
+      const full = await restaurantsApi.ownerGetFull(r.id);
+      const f = full.data.data;
+      reset({
+        name:               f.name,
+        description:        f.description ?? '',
+        cuisineType:        f.cuisineType,
+        address:            f.address,
+        city:               f.city,
+        state:              f.state ?? '',
+        country:            f.country ?? '',
+        postalCode:         f.postalCode ?? '',
+        phone:              f.phone,
+        email:              f.email,
+        website:            f.website ?? '',
+        coverImageUrl:      f.coverImageUrl ?? '',
+        latitude:           f.latitude ?? '',
+        longitude:          f.longitude ?? '',
+        priceRange:         f.priceRange ?? 'MEDIUM',
+        isPopular:          f.isPopular ?? false,
+        capacity:           f.capacity,
+        minCapacity:        f.minCapacity,
+        minBookingNotice:   f.minBookingNotice,
+        maxBookingDays:     f.maxBookingDays,
+        cancellationHours:  f.cancellationHours,
+        depositRequired:    f.depositRequired,
+        depositAmount:      f.depositAmount,
+        parkingAvailable:   f.parkingAvailable,
+        dressCode:          f.dressCode ?? '',
+      });
+    } catch {
+      // silently keep the partial reset already applied
+    }
   };
 
   const onSubmit = async (form: CreateRestaurantExtendedPayload) => {
@@ -183,7 +218,7 @@ export default function OwnerRestaurants() {
     {
       key: 'capacity',
       title: 'Capacity',
-      render: (r: Restaurant) => `${(r as any).maxCapacity ?? r.capacity} seats`,
+      render: (r: Restaurant) => `${r.capacity} seats`,
     },
     {
       key: 'status',
@@ -397,9 +432,14 @@ export default function OwnerRestaurants() {
 
             <div>
               <label className="label">Max Capacity (seats) *</label>
-              <input type="number" className={`input-field ${errors.maxCapacity ? 'input-error' : ''}`}
+              <input type="number"
+                className={`input-field ${errors.capacity ? 'input-error' : ''} ${formMode === 'edit' ? 'opacity-50 cursor-not-allowed' : ''}`}
                 placeholder="120"
-                {...register('maxCapacity', { required: true, min: 1, valueAsNumber: true })} />
+                disabled={formMode === 'edit'}
+                {...register('capacity', { required: true, min: 1, valueAsNumber: true })} />
+              {formMode === 'edit' && (
+                <p className="mt-1 text-xs text-slate-400">Capacity is managed through tables — edit in the Manage view.</p>
+              )}
             </div>
 
             <div>

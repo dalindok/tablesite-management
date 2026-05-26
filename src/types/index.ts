@@ -303,7 +303,7 @@ export interface RestaurantFull {
   cancellationHours: number;
   depositRequired: boolean;
   depositAmount: number;
-  maxCapacity: number;
+  capacity: number;      // formatRestaurant returns r.max_capacity as "capacity"
   minCapacity: number;
   parkingAvailable: boolean;
   dressCode?: string;
@@ -338,7 +338,7 @@ export interface CreateRestaurantExtendedPayload {
   longitude?: string;
   priceRange?: PriceRange;
   isPopular?: boolean;
-  maxCapacity: number;
+  capacity: number;    // backend schema field name is "capacity" → maps to max_capacity in DB
   minCapacity?: number;
   minBookingNotice?: number;
   maxBookingDays?: number;
